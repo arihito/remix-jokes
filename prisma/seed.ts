@@ -1,10 +1,19 @@
 import { PrismaClient } from "@prisma/client";
-let db = new PrismaClient();
+let prisma = new PrismaClient();
 
 async function seed() {
+  let kody = await prisma.user.create({
+    data: {
+      username: "kody",
+      // this is a hashed version of "twixrox"
+      passwordHash:
+        "$2b$10$K7L1OJ45/4Y2nIvhRVpCe.FSmhDdWoXehVzJptJ/op0lSsvqNu/1u"
+    }
+  });
   await Promise.all(
     getJokes().map(joke => {
-      return db.joke.create({ data: joke });
+      let data = { jokesterId: kody.id, ...joke };
+      return prisma.joke.create({ data });
     })
   );
 }
@@ -42,26 +51,6 @@ function getJokes() {
     {
       name: "Elevator",
       content: `My first time using an elevator was an uplifting experience. The second time let me down.`
-    },
-    {
-      name: "POTATO BAG STRENGTH",
-      content: `An exercise for people who are out of shape: Begin with a five-pound potato bag in each hand. Extend your arms straight out from your sides, hold them there for...`
-    },
-    {
-      name: "CAN’T COME TO CLASS",
-      content: `My daughter received this e-mail from a prospective student prior to the start of the semester: “Dear Professor, I won’t be able to come to any of your classes or...`
-    },
-    {
-      name: "MADE MY OWN GRANDKIDS",
-      content: `Scene: With a patient in my medical exam room Me: How old are your kids? Patient: Forty-four and 39 from my wife who passed away, and from my second wife,...`
-    },
-    {
-      name: "A TO A+",
-      content: `The definition of a perfectionist: someone who wants to go from point A to point A+. David Bez`
-    },
-    {
-      name: "FREE MAPS",
-      content: `Traveling through the Midwest, I stopped at an Ohio welcome center to pick up a state map. I found plenty of brochures but no maps. Then I spotted two employees...`
     }
   ];
 }
