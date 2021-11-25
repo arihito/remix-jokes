@@ -5,7 +5,7 @@ import {
   useSearchParams
 } from "remix";
 import { db } from "~/utils/db.server";
-import { login } from "~/utils/session.server";
+import { login, createUserSession } from "~/utils/session.server";
 import stylesUrl from "../styles/login.css";
 
 export let links: LinksFunction = () => {
@@ -65,15 +65,13 @@ export let action: ActionFunction = async ({
   switch (loginType) {
     case "login": {
       let user = await login({ username, password });
-      console.log({ user });
       if (!user) {
         return {
           fields,
           formError: `Username/Password combination is incorrect`
         };
       }
-      // if there is a user, create their session and redirect to /jokes
-      return { fields, formError: "Not implemented" };
+      return createUserSession(user.id, redirectTo);
     }
     case "register": {
       let userExists = await db.user.findFirst({
