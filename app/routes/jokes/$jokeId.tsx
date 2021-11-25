@@ -1,4 +1,8 @@
-import { ActionFunction, LoaderFunction } from "remix";
+import type {
+  LoaderFunction,
+  ActionFunction,
+  MetaFunction
+} from "remix";
 import {
   Link,
   useLoaderData,
@@ -8,18 +12,28 @@ import {
 } from "remix";
 import type { Joke } from "@prisma/client";
 import { db } from "~/utils/db.server";
-import {
-  getUserId,
-  requireUserId
-} from "~/utils/session.server";
+import { requireUserId } from "~/utils/session.server";
 
-type LoaderData = { joke: Joke; isOwner: boolean };
-
-export let loader: LoaderFunction = async ({
-  request,
-  params
+export let meta: MetaFunction = ({
+  data
+}: {
+  data: LoaderData | undefined;
 }) => {
-  let userId = await getUserId(request);
+  if (!data) {
+    return {
+      title: "No joke",
+      description: "No joke found"
+    };
+  }
+  return {
+    title: `"${data.joke.name}" joke`,
+    description: `Enjoy the "${data.joke.name}" joke and much more`
+  };
+};
+
+type LoaderData = { joke: Joke };
+
+export let loader: LoaderFunction = async ({ params }) => {
   let joke = await db.joke.findUnique({
     where: { id: params.jokeId }
   });
@@ -28,10 +42,7 @@ export let loader: LoaderFunction = async ({
       status: 404
     });
   }
-  let data: LoaderData = {
-    joke,
-    isOwner: userId === joke.jokesterId
-  };
+  let data: LoaderData = { joke };
   return data;
 };
 
@@ -72,18 +83,16 @@ export default function JokeRoute() {
       <p>Here's your hilarious joke:</p>
       <p>{data.joke.content}</p>
       <Link to=".">{data.joke.name} Permalink</Link>
-      {data.isOwner ? (
-        <form method="post">
-          <input
-            type="hidden"
-            name="_method"
-            value="delete"
-          />
-          <button type="submit" className="button">
-            Delete
-          </button>
-        </form>
-      ) : null}
+      <form method="post">
+        <input
+          type="hidden"
+          name="_method"
+          value="delete"
+        />
+        <button type="submit" className="button">
+          Delete
+        </button>
+      </form>
     </div>
   );
 }
@@ -112,9 +121,7 @@ export function CatchBoundary() {
   }
 }
 
-export function ErrorBoundary({ error }: { error: Error }) {
-  console.error(error);
-
+export function ErrorBoundary() {
   let { jokeId } = useParams();
   return (
     <div className="error-container">{`There was an error loading joke by the id ${jokeId}. Sorry.`}</div>

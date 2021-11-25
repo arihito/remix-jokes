@@ -1,4 +1,8 @@
-import type { ActionFunction, LinksFunction } from "remix";
+import type {
+  ActionFunction,
+  LinksFunction,
+  MetaFunction
+} from "remix";
 import {
   useActionData,
   Link,
@@ -14,6 +18,14 @@ import stylesUrl from "../styles/login.css";
 
 export let links: LinksFunction = () => {
   return [{ rel: "stylesheet", href: stylesUrl }];
+};
+
+export let meta: MetaFunction = () => {
+  return {
+    title: "Remix Jokes | Login",
+    description:
+      "Login to submit your own jokes to Remix Jokes!"
+  };
 };
 
 function validateUsername(username: unknown) {
@@ -48,7 +60,7 @@ export let action: ActionFunction = async ({
   let loginType = form.get("loginType");
   let username = form.get("username");
   let password = form.get("password");
-  let redirectTo = form.get("redirectTo");
+  let redirectTo = form.get("redirectTo") || "/jokes";
   if (
     typeof loginType !== "string" ||
     typeof username !== "string" ||
@@ -87,7 +99,6 @@ export let action: ActionFunction = async ({
           formError: `User with username ${username} already exists`
         };
       }
-      // create the user
       const user = await register({ username, password });
       if (!user) {
         return {
